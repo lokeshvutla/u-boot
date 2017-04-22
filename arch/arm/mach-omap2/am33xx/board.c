@@ -10,6 +10,7 @@
 
 #include <common.h>
 #include <dm.h>
+#include <debug_uart.h>
 #include <errno.h>
 #include <ns16550.h>
 #include <spl.h>
@@ -312,6 +313,9 @@ void early_system_init(void)
 	set_uart_mux_conf();
 	setup_early_clocks();
 	uart_soft_reset();
+#ifdef CONFIG_DEBUG_UART
+	debug_uart_init();
+#endif
 #ifdef CONFIG_TI_I2C_BOARD_DETECT
 	do_board_detect();
 #endif
