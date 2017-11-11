@@ -58,5 +58,10 @@ config K3_BOOT_CORE_ID
 	int
 	default 16
 
+config K3_LOAD_SYSFW
+	bool
+	depends on SPL
+	default n
+
 source "board/ti/am65x/Kconfig"
 endif
