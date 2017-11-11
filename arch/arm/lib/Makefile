@@ -63,11 +63,7 @@ obj-y	+= reset.o
 endif
 
 obj-y	+= cache.o
-ifndef CONFIG_ARM64
-ifndef CONFIG_CPU_V7M
-obj-y	+= cache-cp15.o
-endif
-endif
+obj-$(CONFIG_MMU)	+= cache-cp15.o
 
 obj-y	+= psci-dt.o
 
