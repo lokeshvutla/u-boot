@@ -64,6 +64,9 @@ endif
 
 obj-y	+= cache.o
 obj-$(CONFIG_MMU)	+= cache-cp15.o
+ifeq ($(CONFIG_CPU_V7R)$(CONFIG_ARM_MPU),yy)
+obj-y	+= cache-cp15.o
+endif
 
 obj-y	+= psci-dt.o
 
