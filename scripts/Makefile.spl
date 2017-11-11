@@ -395,12 +395,29 @@ SHRUNK_ARCH_DTB = $(patsubst %,$(obj)/dts/%.dtb,$(subst ",,$(CONFIG_SPL_OF_LIST)
 $(SHRUNK_ARCH_DTB): $$(patsubst $(obj)/dts/%, arch/$(ARCH)/dts/%, $$@)
 	$(call if_changed,fdtgrep)
 
+ifneq ($(CONFIG_SPL_DTB_FIT_SOURCE),"")
+SPL_ITS = $(subst ",,$(CONFIG_SPL_FIT_SOURCE))
+
+$(obj)/$(SPL_BIN).multidtb.fit: $(SPL_ITS) FORCE
+	$(call if_changed,mkfitimage)
+else
+ifneq ($(CONFIG_SPL_DTB_FIT_GENERATOR),"")
+SPL_ITS := $(SPL_BIN).its
+$(SPL_ITS): FORCE
+	$(srctree)/$(CONFIG_SPL_DTB_FIT_GENERATOR) \
+	$(patsubst %,$(obj)/dts/%.dtb,$(subst ",,$(CONFIG_SPL_OF_LIST))) > $@
+
+$(obj)/$(SPL_BIN).multidtb.fit: $(SHRUNK_ARCH_DTB) $(SPL_ITS) FORCE
+	$(call if_changed,mkfitimage)
+else
 MKIMAGEFLAGS_$(SPL_BIN).multidtb.fit = -f auto -A $(ARCH) -T firmware -C none -O u-boot \
 	-n "Multi DTB fit image for $(SPL_BIN)" -E \
 	$(patsubst %,-b %,$(SHRUNK_ARCH_DTB))
 
 $(obj)/$(SPL_BIN).multidtb.fit: /dev/null $(SHRUNK_ARCH_DTB) FORCE
 	$(call if_changed,mkimage)
+endif
+endif
 ifneq ($(SOURCE_DATE_EPOCH),)
 	touch -d @$(SOURCE_DATE_EPOCH) $(obj)/$(SPL_BIN).multidtb.fit
 	chmod 0600 $(obj)/$(SPL_BIN).multidtb.fit
