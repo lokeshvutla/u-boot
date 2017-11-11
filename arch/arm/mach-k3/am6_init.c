@@ -9,8 +9,12 @@
 #include <common.h>
 #include <asm/io.h>
 #include <spl.h>
-#include <asm/arch/hardware.h>
 #include "common.h"
+#include <remoteproc.h>
+#include <linux/libfdt.h>
+#include <image.h>
+#include <asm/sections.h>
+#include <asm/arch/hardware.h>
 
 #ifdef CONFIG_SPL_BUILD
 static void mmr_unlock(u32 base, u32 partition)
@@ -55,11 +59,57 @@ static void store_boot_index_from_rom(void)
 	*boot_index = *(u32 *)(CONFIG_SYS_K3_BOOT_PARAM_TABLE_INDEX);
 }
 
+#ifdef CONFIG_K3_LOAD_SYSFW
+static int locate_system_controller_firmware(int *addr, int *len)
+{
+	struct image_header *header;
+	int images, node;
+	const void *fit;
+
+	if (IS_ENABLED(CONFIG_SPL_SEPARATE_BSS))
+		fit = (ulong *)&_image_binary_end;
+	else
+		fit = (ulong *)&__bss_end;
+
+	header = (struct image_header *)fit;
+	if (image_get_magic(header) != FDT_MAGIC) {
+		debug("No FIT image appended to SPL\n");
+		return -EINVAL;
+	}
+
+	/* find the node holding the images information */
+	images = fdt_path_offset(fit, FIT_IMAGES_PATH);
+	if (images < 0) {
+		debug("%s: Cannot find /images node: %d\n", __func__, images);
+		return -ENOENT;
+	}
+
+	/* Find the subnode holding system controller firmware */
+	node = fdt_subnode_offset(fit, images, "sysfw");
+	if (node < 0) {
+		debug("%s: Cannot find fdt node sysfw in FIT: %d\n",
+		      __func__, node);
+		return -EINVAL;
+	}
+
+	fit_image_get_data_offset(fit, node, addr);
+	*addr += (int)fit + ((fdt_totalsize(fit) + 3) & ~3);
+	fit_image_get_data_size(fit, node, len);
+
+	return 0;
+}
+#endif
+
 void board_init_f(ulong dummy)
 {
 #if defined(CONFIG_K3_AM654_DDRSS)
 	struct udevice *dev;
+	int ret;
 #endif
+#ifdef CONFIG_K3_LOAD_SYSFW
+	int fw_addr, len;
+#endif
+
 	/*
 	 * Cannot delay this further as there is a chance that
 	 * K3_BOOT_PARAM_TABLE_INDEX can be over written by SPL MALLOC section.
@@ -75,6 +125,38 @@ void board_init_f(ulong dummy)
 
 	/* Init DM early in-order to invoke system controller */
 	spl_early_init();
+
+#ifdef CONFIG_K3_LOAD_SYSFW
+	/* Try to locate firmware image and load it to system controller */
+	if (!locate_system_controller_firmware(&fw_addr, &len)) {
+		printf("Firmware located. Now try to load\n");
+		/*
+		 * It is assumed that remoteproc device 0 is the corresponding
+		 * system-controller that runs SYSFW.
+		 * Make sure DT reflects the same.
+		 */
+		ret = rproc_dev_init(0);
+		if (ret) {
+			debug("rproc failed to be initialized: ret= %d\n",
+			      ret);
+			return;
+		}
+
+		ret = rproc_load(0, fw_addr, len);
+		if (ret) {
+			debug("Firmware failed to start on rproc: ret= %d\n",
+			      ret);
+			return;
+		}
+
+		ret = rproc_start(0);
+		if (ret) {
+			debug("Firmware init failed on rproc: ret= %d\n",
+			      ret);
+			return;
+		}
+	}
+#endif
 
 	/* Prepare console output */
 	preloader_console_init();
