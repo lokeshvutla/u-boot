@@ -4,3 +4,6 @@
 #
 
 obj-${CONFIG_TI_I2C_BOARD_DETECT} += board_detect.o
+ifndef CONFIG_SPL_BUILD
+obj-${CONFIG_CMD_DDR3} += cmd_ddr3.o
+endif
