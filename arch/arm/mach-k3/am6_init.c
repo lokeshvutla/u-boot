@@ -142,6 +142,8 @@ void board_init_f(ulong dummy)
 	int ret, fw_addr, len;
 	struct ti_sci_handle *ti_sci;
 	struct ti_sci_board_ops *board_ops;
+#endif
+#if defined(CONFIG_K3_LOAD_SYSFW) || defined(CONFIG_K3_AM654_DDRSS)
 	struct udevice *dev;
 #endif
 
@@ -251,6 +253,14 @@ void board_init_f(ulong dummy)
 #else
 	/* Prepare console output */
 	preloader_console_init();
+#endif
+
+#ifdef CONFIG_K3_AM654_DDRSS
+	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
+	if (ret) {
+		printf("DRAM init failed: %d\n", ret);
+		return;
+	}
 #endif
 }
 
