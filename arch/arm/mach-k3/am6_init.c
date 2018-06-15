@@ -10,11 +10,14 @@
 #include <asm/io.h>
 #include <spl.h>
 #include "common.h"
+#include <dm.h>
 #include <remoteproc.h>
 #include <linux/libfdt.h>
+#include <linux/soc/ti/ti_sci_protocol.h>
 #include <image.h>
 #include <asm/sections.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/boardcfg_data.h>
 
 #ifdef CONFIG_SPL_BUILD
 static void mmr_unlock(u32 base, u32 partition)
@@ -102,12 +105,14 @@ static int locate_system_controller_firmware(int *addr, int *len)
 
 void board_init_f(ulong dummy)
 {
-#if defined(CONFIG_K3_AM654_DDRSS)
+#if defined(CONFIG_K3_AM654_DDRSS) || defined(CONFIG_K3_LOAD_SYSFW)
 	struct udevice *dev;
 	int ret;
 #endif
 #ifdef CONFIG_K3_LOAD_SYSFW
 	int fw_addr, len;
+	struct ti_sci_handle *ti_sci;
+	struct ti_sci_board_ops *board_ops;
 #endif
 
 	/*
@@ -156,10 +161,67 @@ void board_init_f(ulong dummy)
 			return;
 		}
 	}
-#endif
 
+	/* Bring up the Device Management and Security Controller (SYSFW) */
+	ret = uclass_get_device_by_name(UCLASS_FIRMWARE, "dmsc", &dev);
+	if (ret) {
+		debug("Failed to initialize SYSFW (%d)\n", ret);
+		return;
+	}
+
+	ti_sci = (struct ti_sci_handle *)(ti_sci_get_handle_from_sysfw(dev));
+	board_ops = &ti_sci->ops.board_ops;
+
+	/* Apply power/clock (PM) specific configuration to SYSFW */
+	ret = board_ops->board_config_pm(ti_sci,
+					 (u64)(u32)&am65_boardcfg_pm_data,
+					 sizeof(am65_boardcfg_pm_data));
+	if (ret) {
+		debug("Failed to set board PM configuration (%d)\n", ret);
+		return;
+	}
+
+	/*
+	 * Now with the SYSFW having the PM configuration applied successfully,
+	 * we can finally bring up our regular U-Boot console.
+	 */
+	preloader_console_init();
+
+	/* Output System Firmware version info */
+	printf("SYSFW ABI: %d.%d (firmware rev 0x%04x '%.*s')\n",
+	       ti_sci->version.abi_major, ti_sci->version.abi_minor,
+	       ti_sci->version.firmware_revision,
+	       sizeof(ti_sci->version.firmware_description),
+	       ti_sci->version.firmware_description);
+
+	/* Apply the remainder of the board configuration to SYSFW */
+	ret = board_ops->board_config(ti_sci,
+				      (u64)(u32)&am65_boardcfg_data,
+				      sizeof(am65_boardcfg_data));
+	if (ret) {
+		debug("Failed to set board configuration (%d)\n", ret);
+		return;
+	}
+
+	ret = board_ops->board_config_rm(ti_sci,
+					 (u64)(u32)&am65_boardcfg_rm_data,
+					 sizeof(am65_boardcfg_rm_data));
+	if (ret) {
+		debug("Failed to set board RM configuration (%d)\n", ret);
+		return;
+	}
+
+	ret = board_ops->board_config_security(ti_sci,
+					 (u64)(u32)&am65_boardcfg_security_data,
+					 sizeof(am65_boardcfg_security_data));
+	if (ret) {
+		debug("Failed to set board security configuration (%d)\n", ret);
+		return;
+	}
+#else
 	/* Prepare console output */
 	preloader_console_init();
+#endif
 
 #ifdef CONFIG_K3_AM654_DDRSS
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
