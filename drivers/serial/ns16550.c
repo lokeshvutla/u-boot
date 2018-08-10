@@ -279,42 +279,6 @@ DEBUG_UART_FUNCS
 
 #endif
 
-#ifdef CONFIG_DEBUG_UART_OMAP
-
-#include <debug_uart.h>
-
-static inline void _debug_uart_init(void)
-{
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
-	int baud_divisor;
-
-	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_DEBUG_UART_CLOCK,
-					    CONFIG_BAUDRATE);
-	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
-	serial_dout(&com_port->mdr1, 0x7);
-	serial_dout(&com_port->mcr, UART_MCRVAL);
-	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
-
-	serial_dout(&com_port->lcr, UART_LCR_BKSE | UART_LCRVAL);
-	serial_dout(&com_port->dll, baud_divisor & 0xff);
-	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
-	serial_dout(&com_port->lcr, UART_LCRVAL);
-	serial_dout(&com_port->mdr1, 0x0);
-}
-
-static inline void _debug_uart_putc(int ch)
-{
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
-
-	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE))
-		;
-	serial_dout(&com_port->thr, ch);
-}
-
-DEBUG_UART_FUNCS
-
-#endif
-
 #ifdef CONFIG_DM_SERIAL
 static int ns16550_serial_putc(struct udevice *dev, const char ch)
 {
@@ -489,12 +453,6 @@ static const struct udevice_id ns16550_serial_ids[] = {
 	{ .compatible = "ingenic,jz4780-uart",	.data = PORT_JZ4780  },
 	{ .compatible = "nvidia,tegra20-uart",	.data = PORT_NS16550 },
 	{ .compatible = "snps,dw-apb-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,omap2-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,omap3-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,omap4-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,am3352-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,am4372-uart",	.data = PORT_NS16550 },
-	{ .compatible = "ti,dra742-uart",	.data = PORT_NS16550 },
 	{}
 };
 #endif /* OF_CONTROL && !OF_PLATDATA */
