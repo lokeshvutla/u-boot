@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree Source for AM6 SoC Family MCU Domain peripherals
+ *
+ * Copyright (C) 2018 Texas Instruments Incorporated - http://www.ti.com/
+ */
+
+&cbass_mcu {
+	mcu_secproxy: secproxy@28380000 {
+		compatible = "ti,am654-secure-proxy";
+		reg = <0x2a380000 0x80000>,
+		      <0x2a400000 0x80000>,
+		      <0x2a480000 0x80000>;
+		reg-names = "rt", "scfg", "target_data";
+		#mbox-cells = <1>;
+		u-boot,dm-spl;
+	};
+
+	sysctrler: sysctrler {
+		compatible = "ti,am654-system-controller";
+		mboxes= <&mcu_secproxy 4>, <&mcu_secproxy 5>;
+		mbox-names = "tx", "rx";
+		u-boot,dm-spl;
+	};
+};
