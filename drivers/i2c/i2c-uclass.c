@@ -378,6 +378,14 @@ int dm_i2c_probe(struct udevice *bus, uint chip_addr, uint chip_flags,
 	return ret;
 }
 
+int dm_i2c_probe_device(struct udevice *dev)
+{
+	struct udevice *bus = dev_get_parent(dev);
+	struct dm_i2c_chip *chip = dev_get_parent_platdata(dev);
+
+	return i2c_probe_chip(bus, chip->chip_addr, chip->flags);
+}
+
 int dm_i2c_set_bus_speed(struct udevice *bus, unsigned int speed)
 {
 	struct dm_i2c_ops *ops = i2c_get_ops(bus);

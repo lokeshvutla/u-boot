@@ -167,6 +167,19 @@ int dm_i2c_probe(struct udevice *bus, uint chip_addr, uint chip_flags,
 		 struct udevice **devp);
 
 /**
+ * dm_i2c_probe_dev() - probe the presence of a I2C device
+ *
+ * This can be useful to check for the existence of a chip already probed
+ * (software wise).
+ * It is typically implemented by writing the chip address to the bus
+ * and checking that the chip replies with an ACK.
+ *
+ * @bus:	Device to probe
+ * @return 0 if a chip was found at that address, -ve if not
+ */
+int dm_i2c_probe_device(struct udevice *dev);
+
+/**
  * dm_i2c_reg_read() - Read a value from an I2C register
  *
  * This reads a single value from the given address in an I2C chip
