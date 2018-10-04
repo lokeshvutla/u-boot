@@ -996,6 +996,23 @@ int fdtdec_setup_memory_banksize(void);
  */
 int fdtdec_setup(void);
 
+#if CONFIG_IS_ENABLED(MULTI_DTB_FIT)
+/**
+ * fdtdec_resetup()  - Set up the device tree ready for use again.
+ *
+ * The main difference with fdtdec_setup() is that it returns if the fdt has
+ * changed because a better match has been found.
+ * This is typically used for boards that rely on a DM driver to detect the
+ * board type.
+ *
+ * @param rescan Return a flag indicating that fdt has changed and rescaning the
+ *               fdt is required.
+ *
+ * @return 0 if OK, -ve on error
+ */
+int fdtdec_resetup(int *rescan);
+#endif
+
 /**
  * Board-specific FDT initialization. Returns the address to a device tree blob.
  * Called when CONFIG_OF_BOARD is defined, or if CONFIG_OF_SEPARATE is defined
