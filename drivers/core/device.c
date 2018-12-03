@@ -387,7 +387,8 @@ int device_probe(struct udevice *dev)
 	if (dev->parent && device_get_uclass_id(dev) != UCLASS_PINCTRL)
 		pinctrl_select_state(dev, "default");
 
-	dev_power_domain_on(dev);
+	if (!(drv->flags & DM_FLAG_DEFAULT_PD_CTRL_OFF))
+		dev_power_domain_on(dev);
 
 	ret = uclass_pre_probe_device(dev);
 	if (ret)
