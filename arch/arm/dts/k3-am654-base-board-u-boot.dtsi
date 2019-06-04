@@ -110,6 +110,14 @@
 	u-boot,dm-spl;
 };
 
+&wkup_pmx0 {
+	u-boot,dm-spl;
+
+	wkup_i2c0_pins_default {
+		u-boot,dm-spl;
+	};
+};
+
 &main_pmx0 {
 	u-boot,dm-spl;
 	main_uart0_pins_default: main_uart0_pins_default {
@@ -178,4 +186,8 @@
 	pinctrl-0 = <&main_mmc1_pins_default>;
 	sdhci-caps-mask = <0x7 0x0>;
 	ti,driver-strength-ohm = <50>;
+};
+
+&wkup_i2c0 {
+	u-boot,dm-spl;
 };
