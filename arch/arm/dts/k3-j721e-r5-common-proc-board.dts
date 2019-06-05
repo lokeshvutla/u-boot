@@ -38,6 +38,16 @@
 		clock-frequency = <200000000>;
 		u-boot,dm-spl;
 	};
+
+	memorycontroller: memorycontroller@02980000 {
+		compatible = "ti,j721e-ddrss";
+		reg = <0x0 0x02990000 0x0 0x4000>;
+		power-domains = <&k3_pds 47 TI_SCI_PD_SHARED>,
+				<&k3_pds 90 TI_SCI_PD_SHARED>;
+		clocks = <&k3_clks 47 2>;
+
+		u-boot,dm-spl;
+	};
 };
 
 &cbass_mcu_wakeup {
@@ -82,6 +92,12 @@
 			J721E_WKUP_IOPAD(0xec, PIN_OUTPUT, 0) /* (J27) WKUP_GPIO0_15.MCU_UART0_RTSn */
 			J721E_WKUP_IOPAD(0xe4, PIN_INPUT, 0) /* (H28) WKUP_GPIO0_13.MCU_UART0_RXD */
 			J721E_WKUP_IOPAD(0xe0, PIN_OUTPUT, 0) /* (G29) WKUP_GPIO0_12.MCU_UART0_TXD */
+		>;
+	};
+	wkup_i2c0_pins_default: wkup-i2c0-pins-default {
+		pinctrl-single,pins = <
+			J721E_WKUP_IOPAD(0xf8, PIN_INPUT_PULLUP, 0) /* (J25) WKUP_I2C0_SCL */
+			J721E_WKUP_IOPAD(0xfc, PIN_INPUT_PULLUP, 0) /* (H24) WKUP_I2C0_SDA */
 		>;
 	};
 };
@@ -136,6 +152,13 @@
 	clock-names = "clk_xin";
 	clocks = <&clk_200mhz>;
 	ti,driver-strength-ohm = <50>;
+};
+
+&wkup_i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&wkup_i2c0_pins_default>;
+	clock-frequency = <400000>;
+	u-boot,dm-spl;
 };
 
 #include "k3-j721e-common-proc-board-u-boot.dtsi"
