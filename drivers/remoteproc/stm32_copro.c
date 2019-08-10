@@ -107,9 +107,11 @@ static int stm32_copro_set_hold_boot(struct udevice *dev, bool hold)
  * stm32_copro_device_to_virt() - Convert device address to virtual address
  * @dev:	corresponding STM32 remote processor device
  * @da:		device address
+ * @size:	Size of the section
  * @return converted virtual address
  */
-static void *stm32_copro_device_to_virt(struct udevice *dev, ulong da)
+static void *stm32_copro_device_to_virt(struct udevice *dev, ulong da,
+					ulong size)
 {
 	fdt32_t in_addr = cpu_to_be32(da);
 	u64 paddr;
