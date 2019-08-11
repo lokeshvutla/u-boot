@@ -219,6 +219,17 @@ int rproc_elf32_load_image(struct udevice *dev, unsigned long addr, ulong size);
  * @return 0 if the image is successfully loaded, else appropriate error value.
  */
 int rproc_elf64_load_image(struct udevice *dev, ulong addr, ulong size);
+
+/**
+ * rproc_elf_load_image() - load an ELF image
+ * @dev:	device loading the ELF image
+ * @addr:	valid ELF image address
+ * @size:	size of the image
+ *
+ * Auto detects if the image is ELF32 or ELF64 image and load accordingly.
+ * @return 0 if the image is successfully loaded, else appropriate error value.
+ */
+int rproc_elf_load_image(struct udevice *dev, unsigned long addr, ulong size);
 #else
 static inline int rproc_init(void) { return -ENOSYS; }
 static inline int rproc_dev_init(int id) { return -ENOSYS; }
@@ -234,6 +245,9 @@ static inline int rproc_elf32_load_image(struct udevice *dev,
 { return -ENOSYS; }
 static inline int rproc_elf64_load_image(struct udevice *dev, ulong addr,
 					 ulong size)
+{ return -ENOSYS; }
+static inline int rproc_elf_load_image(struct udevice *dev, ulong addr,
+				       ulong size)
 { return -ENOSYS; }
 #endif
 
